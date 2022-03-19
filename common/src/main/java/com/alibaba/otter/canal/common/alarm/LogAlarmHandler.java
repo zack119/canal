@@ -17,6 +17,8 @@ public class LogAlarmHandler extends AbstractCanalLifeCycle implements CanalAlar
 
     public void sendAlarm(String destination, String msg) {
         logger.error("destination:{}[{}]", new Object[] { destination, msg });
+
+
     }
 
 }

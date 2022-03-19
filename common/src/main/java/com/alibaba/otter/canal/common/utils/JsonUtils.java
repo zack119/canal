@@ -66,6 +66,11 @@ public class JsonUtils {
         return JSON.toJSONString(obj, features); // 默认为UTF-8
     }
 
+
+    public static String toJson(Object object) {
+        return JSON.toJSONString(object);
+    }
+
     /**
      * 可以允许指定一些过滤字段进行生成json对象
      */

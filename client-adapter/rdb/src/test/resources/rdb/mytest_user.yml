@@ -1,17 +1,29 @@
 dataSourceKey: defaultDS
 destination: example
-outerAdapterKey: oracle1
+outerAdapterKey: mysql
 concurrent: true
 dbMapping:
-  database: mytest
-  table: user
-  targetTable: mytest.tb_user
+  database: mytest2
+  table: sku
+  targetTable: sku
   targetPk:
-    id: id
+    sku_id: sku_id
   mapAll: true
+#dataSourceKey: defaultDS
+#destination: example
+#outerAdapterKey: mysql
+#concurrent: true
+#dbMapping:
+#  database: mytest2
+#  table: user
+#  targetTable: user
+#  targetPk:
+#    id: id
+#  mapAll: true
+
 #  targetColumns:
 #    id:
 #    name:
-#    role_id:
+#    role_id::::::q::
 #    c_time:
 #    test1:

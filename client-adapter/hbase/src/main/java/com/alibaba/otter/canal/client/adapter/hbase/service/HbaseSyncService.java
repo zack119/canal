@@ -36,7 +36,8 @@ public class HbaseSyncService {
             } else if (type != null && type.equalsIgnoreCase("UPDATE")) {
                 update(config, dml);
             } else if (type != null && type.equalsIgnoreCase("DELETE")) {
-                delete(config, dml);
+                // 不做删除操作
+                //delete(config, dml);
             }
             if (logger.isDebugEnabled()) {
                 logger.debug("DML: {}", JSON.toJSONString(dml, SerializerFeature.WriteMapNullValue));

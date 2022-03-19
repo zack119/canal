@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.alibaba.otter.canal.connector.core.consumer.CommonMessage;
 import com.alibaba.otter.canal.protocol.CanalEntry;
 import com.alibaba.otter.canal.protocol.Message;
@@ -18,6 +21,8 @@ import com.alibaba.otter.canal.protocol.Message;
  * @version 1.0.0
  */
 public class MessageUtil {
+
+    private static final Logger logger  = LoggerFactory.getLogger(MessageUtil.class);
 
     public static List<CommonMessage> convert(Message message) {
         if (message == null) {
@@ -88,6 +93,17 @@ public class MessageUtil {
                                     column.getValue(),
                                     column.getSqlType(),
                                     column.getMysqlType()));
+                            // todo delete
+                            logger.info("table: {}, column name: {}, column value: {}. convert value: {} ",
+                                    msg.getTable(),
+                                    column.getName(),
+                                    column.getValue(),
+                                    JdbcTypeUtil.typeConvert(msg.getTable(),
+                                            column.getName(),
+                                            column.getValue(),
+                                            column.getSqlType(),
+                                            column.getMysqlType()));
+
                         }
                         // 获取update为true的字段
                         if (column.getUpdated()) {
@@ -110,6 +126,17 @@ public class MessageUtil {
                                         column.getValue(),
                                         column.getSqlType(),
                                         column.getMysqlType()));
+
+                                    // todo delete
+                                    logger.info("table: {}, column name: {}, column value: {}. convert value: {} ",
+                                            msg.getTable(),
+                                            column.getName(),
+                                            column.getValue(),
+                                            JdbcTypeUtil.typeConvert(msg.getTable(),
+                                                    column.getName(),
+                                                    column.getValue(),
+                                                    column.getSqlType(),
+                                                    column.getMysqlType()));
                                 }
                             }
                         }

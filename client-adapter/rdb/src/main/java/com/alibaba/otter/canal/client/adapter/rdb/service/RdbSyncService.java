@@ -209,8 +209,12 @@ public class RdbSyncService {
     public void sync(BatchExecutor batchExecutor, MappingConfig config, SingleDml dml) {
         if (config != null) {
             try {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("DML: {}", JSON.toJSONString(dml, SerializerFeature.WriteMapNullValue));
+                }
                 String type = dml.getType();
                 if (type != null && type.equalsIgnoreCase("INSERT")) {
+//                    replace(batchExecutor, config, dml);
                     insert(batchExecutor, config, dml);
                 } else if (type != null && type.equalsIgnoreCase("UPDATE")) {
                     update(batchExecutor, config, dml);
@@ -219,9 +223,9 @@ public class RdbSyncService {
                 } else if (type != null && type.equalsIgnoreCase("TRUNCATE")) {
                     truncate(batchExecutor, config);
                 }
-                if (logger.isDebugEnabled()) {
-                    logger.debug("DML: {}", JSON.toJSONString(dml, SerializerFeature.WriteMapNullValue));
-                }
+//                if (logger.isDebugEnabled()) {
+//                    logger.debug("DML: {}", JSON.toJSONString(dml, SerializerFeature.WriteMapNullValue));
+//                }
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
@@ -276,6 +280,13 @@ public class RdbSyncService {
             }
             Object value = data.get(srcColumnName);
             BatchExecutor.setValue(values, type, value);
+        }
+
+        logger.info("insert sql: {}", insertSql);
+        for (Map<String, ?> value : values) {
+            value.forEach((k, v) -> {
+                logger.info("k -> {}, v -> {}", k, String.valueOf(v));
+            });
         }
 
         try {
@@ -350,10 +361,96 @@ public class RdbSyncService {
 
         // 拼接主键
         appendCondition(dbMapping, updateSql, ctype, values, data, old);
+
+        logger.info("update sql: {}", updateSql);
+        for (Map<String, ?> value : values) {
+            value.forEach((k, v) -> {
+                logger.info("k -> {}, v -> {}", k, String.valueOf(v));
+            });
+        }
+
         batchExecutor.execute(updateSql.toString(), values);
         if (logger.isTraceEnabled()) {
             logger.trace("Update target table, sql: {}", updateSql);
         }
+    }
+
+    /**
+     * 使用replace insert 代替 insert、update 操作
+     *
+     * @param batchExecutor
+     * @param config
+     * @param dml
+     * @throws SQLException
+     */
+    private void replace(BatchExecutor batchExecutor, MappingConfig config, SingleDml dml) throws SQLException {
+        Map<String, Object> data = dml.getData();
+        if (data == null || data.isEmpty()) {
+            return;
+        }
+
+        DbMapping dbMapping = config.getDbMapping();
+
+        Map<String, String> columnsMap = SyncUtil.getColumnsMap(dbMapping, data);
+
+        StringBuilder insertSql = new StringBuilder();
+        insertSql.append("REPLACE INTO ").append(SyncUtil.getDbTableName(dbMapping)).append(" (");
+
+        columnsMap.forEach((targetColumnName, srcColumnName) -> insertSql.append("`")
+                .append(targetColumnName)
+                .append("`")
+                .append(","));
+        int len = insertSql.length();
+        insertSql.delete(len - 1, len).append(") VALUES (");
+        int mapLen = columnsMap.size();
+        for (int i = 0; i < mapLen; i++) {
+            insertSql.append("?,");
+        }
+        len = insertSql.length();
+        insertSql.delete(len - 1, len).append(")");
+
+        Map<String, Integer> ctype = getTargetColumnType(batchExecutor.getConn(), config);
+
+        List<Map<String, ?>> values = new ArrayList<>();
+        for (Map.Entry<String, String> entry : columnsMap.entrySet()) {
+            String targetColumnName = entry.getKey();
+            String srcColumnName = entry.getValue();
+            if (srcColumnName == null) {
+                srcColumnName = Util.cleanColumn(targetColumnName);
+            }
+
+            Integer type = ctype.get(Util.cleanColumn(targetColumnName).toLowerCase());
+            if (type == null) {
+                throw new RuntimeException("Target column: " + targetColumnName + " not matched");
+            }
+            Object value = data.get(srcColumnName);
+            BatchExecutor.setValue(values, type, value);
+        }
+
+        logger.info("replace sql: {}", insertSql);
+        for (Map<String, ?> value : values) {
+            value.forEach((k, v) -> {
+                logger.info("k -> {}, v -> {}", k, String.valueOf(v));
+            });
+        }
+
+        try {
+            batchExecutor.execute(insertSql.toString(), values);
+        } catch (SQLException e) {
+            if (skipDupException
+                    && (e.getMessage().contains("Duplicate entry") || e.getMessage().startsWith("ORA-00001:"))) {
+                // ignore
+                // TODO 增加更多关系数据库的主键冲突的错误码
+            } else {
+                throw e;
+            }
+
+
+        }
+        if (logger.isTraceEnabled()) {
+            logger.trace("Insert into target table, sql: {}", insertSql);
+        }
+
     }
 
     /**
@@ -417,6 +514,7 @@ public class RdbSyncService {
                     columnType = new LinkedHashMap<>();
                     final Map<String, Integer> columnTypeTmp = columnType;
                     String sql = "SELECT * FROM " + SyncUtil.getDbTableName(dbMapping) + " WHERE 1=2";
+                    logger.info("select sql: {}, dbMapping: {}", sql, dbMapping);
                     Util.sqlRS(conn, sql, rs -> {
                         try {
                             ResultSetMetaData rsd = rs.getMetaData();
@@ -425,6 +523,7 @@ public class RdbSyncService {
                                 columnTypeTmp.put(rsd.getColumnName(i).toLowerCase(), rsd.getColumnType(i));
                             }
                             columnsTypeCache.put(cacheKey, columnTypeTmp);
+                            logger.info("columnsTypeCache key {}, columnTypeTmp {}", cacheKey, columnTypeTmp);
                         } catch (SQLException e) {
                             logger.error(e.getMessage(), e);
                         }

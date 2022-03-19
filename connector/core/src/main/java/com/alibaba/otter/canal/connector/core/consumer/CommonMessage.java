@@ -4,6 +4,9 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
+
 public class CommonMessage implements Serializable {
 
     private static final long         serialVersionUID = 2611556444074013268L;
@@ -118,8 +121,9 @@ public class CommonMessage implements Serializable {
 
     @Override
     public String toString() {
-        return "CommonMessage{" + "database='" + database + '\'' + ", table='" + table + '\'' + ", pkNames=" + pkNames
-               + ", isDdl=" + isDdl + ", type='" + type + '\'' + ", es=" + es + ", ts=" + ts + ", sql='" + sql + '\''
-               + ", data=" + data + ", old=" + old + '}';
+//        return "CommonMessage{" + "database='" + database + '\'' + ", table='" + table + '\'' + ", pkNames=" + pkNames
+//               + ", isDdl=" + isDdl + ", type='" + type + '\'' + ", es=" + es + ", ts=" + ts + ", sql='" + sql + '\''
+//               + ", data=" + data + ", old=" + old + '}';
+        return ToStringBuilder.reflectionToString(this, ToStringStyle.DEFAULT_STYLE);
     }
 }

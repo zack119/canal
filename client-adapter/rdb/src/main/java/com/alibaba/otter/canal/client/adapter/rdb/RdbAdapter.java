@@ -168,6 +168,7 @@ public class RdbAdapter implements OuterAdapter {
             rdbSyncService.sync(mappingConfigCache, dmls, envProperties);
             rdbMirrorDbSyncService.sync(dmls);
         } catch (Exception e) {
+            logger.error("sync error", e);
             throw new RuntimeException(e);
         }
     }

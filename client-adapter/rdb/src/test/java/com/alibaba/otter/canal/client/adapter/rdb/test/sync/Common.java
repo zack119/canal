@@ -27,4 +27,22 @@ public class Common {
         adapter.init(outerAdapterConfig, null);
         return adapter;
     }
+
+    public static RdbAdapter initMySQL() {
+        DatasourceConfig.DATA_SOURCES.put("defaultDS", TestConstant.dataSource);
+
+        OuterAdapterConfig outerAdapterConfig = new OuterAdapterConfig();
+        outerAdapterConfig.setName("rdb");
+        outerAdapterConfig.setKey("mysql");
+        Map<String, String> properties = new HashMap<>();
+        properties.put("jdbc.driveClassName", "com.mysql.jdbc.Driver");
+        properties.put("jdbc.url", "jdbc:mysql://192.168.200.120:3306/mytest2?useUnicode=true");
+        properties.put("jdbc.username", "root");
+        properties.put("jdbc.password", "my-secret-pw");
+        outerAdapterConfig.setProperties(properties);
+
+        RdbAdapter adapter = new RdbAdapter();
+        adapter.init(outerAdapterConfig, null);
+        return adapter;
+    }
 }

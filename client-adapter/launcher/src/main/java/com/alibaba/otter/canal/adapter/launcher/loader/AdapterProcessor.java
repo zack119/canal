@@ -8,6 +8,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,6 +19,9 @@ import com.alibaba.otter.canal.client.adapter.support.CanalClientConfig;
 import com.alibaba.otter.canal.client.adapter.support.Dml;
 import com.alibaba.otter.canal.client.adapter.support.MessageUtil;
 import com.alibaba.otter.canal.client.adapter.support.Util;
+import com.alibaba.otter.canal.common.alarm.CanalAlarmHandler;
+import com.alibaba.otter.canal.common.alarm.LogAlarmHandler;
+import com.alibaba.otter.canal.common.utils.JsonUtils;
 import com.alibaba.otter.canal.connector.core.config.CanalConstants;
 import com.alibaba.otter.canal.connector.core.consumer.CommonMessage;
 import com.alibaba.otter.canal.connector.core.spi.CanalMsgConsumer;
@@ -50,6 +54,8 @@ public class AdapterProcessor {
 
     private SyncSwitch                      syncSwitch;
 
+    private CanalAlarmHandler canalAlarmHandler;
+
     public AdapterProcessor(CanalClientConfig canalClientConfig, String destination, String groupId,
                             List<List<OuterAdapter>> canalOuterAdapters){
         this.canalClientConfig = canalClientConfig;
@@ -73,6 +79,8 @@ public class AdapterProcessor {
         Thread.currentThread().setContextClassLoader(canalMsgConsumer.getClass().getClassLoader());
         canalMsgConsumer.init(properties, canalDestination, groupId);
         Thread.currentThread().setContextClassLoader(cl);
+
+        canalAlarmHandler = new LogAlarmHandler();
     }
 
     public void start() {
@@ -85,6 +93,7 @@ public class AdapterProcessor {
     }
 
     public void writeOut(final List<CommonMessage> commonMessages) {
+        logger.info("CommonMessage: {}", JsonUtils.toJson(commonMessages));
         List<Future<Boolean>> futures = new ArrayList<>();
         // 组间适配器并行运行
         canalOuterAdapters.forEach(outerAdapters -> {
@@ -105,6 +114,7 @@ public class AdapterProcessor {
                     return true;
                 } catch (Exception e) {
                     logger.error(e.getMessage(), e);
+                    canalAlarmHandler.sendAlarm(canalDestination, ExceptionUtils.getFullStackTrace(e));
                     return false;
                 }
             }));
@@ -220,6 +230,7 @@ public class AdapterProcessor {
                                 canalMsgConsumer.ack();
                                 logger.error(e.getMessage() + " Error sync but ACK!");
                             }
+                            canalAlarmHandler.sendAlarm(canalDestination, ExceptionUtils.getFullStackTrace(e));
                             Thread.sleep(500);
                         }
                     }
@@ -227,6 +238,7 @@ public class AdapterProcessor {
 
                 canalMsgConsumer.disconnect();
             } catch (Throwable e) {
+                canalAlarmHandler.sendAlarm(canalDestination, ExceptionUtils.getFullStackTrace(e));
                 logger.error("process error!", e);
             }
 
@@ -264,6 +276,7 @@ public class AdapterProcessor {
             logger.info("destination {} all adapters destroyed!", canalDestination);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
+            canalAlarmHandler.sendAlarm(canalDestination, ExceptionUtils.getFullStackTrace(e));
         }
     }
 }
