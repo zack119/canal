@@ -17,7 +17,7 @@ canal.conf:
   secretKey:
   consumerProperties:
     # canal tcp consumer
-    canal.tcp.server.host: 172.31.81.112:11111
+    canal.tcp.server.host: 127.0.0.1:11111
     canal.tcp.zookeeper.hosts:
     canal.tcp.batch.size: 500
     canal.tcp.username:
@@ -46,24 +46,17 @@ canal.conf:
     rabbitmq.password:
     rabbitmq.resource.ownerId:
 
-  srcDataSources:
-    defaultDS:
-      url: jdbc:mysql://rm-bp138bj6z5xqm82as.mysql.rds.aliyuncs.com:3306/egenie_baseinfo?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false
-      username: egeniekn
-      password: eym8RJDoxSqU!
+#  srcDataSources:
+#    defaultDS:
+#      url: jdbc:mysql://127.0.0.1:3306/mytest?useUnicode=true
+#      username: root
+#      password: 121212
   canalAdapters:
-  - instance: baseinfo # canal instance Name or mq topic name
+  - instance: example # canal instance Name or mq topic name
     groups:
     - groupId: g1
       outerAdapters:
       - name: logger
-      - name: rdb
-        key: mysql1
-        properties:
-          jdbc.driverClassName: com.mysql.jdbc.Driver
-          jdbc.url: jdbc:mysql://172.31.81.143:3306/test02?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false
-          jdbc.username: canal
-          jdbc.password: canal
 #      - name: rdb
 #        key: mysql1
 #        properties:

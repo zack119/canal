@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.alibaba.otter.canal.common.AbstractCanalLifeCycle;
+import com.alibaba.otter.canal.common.utils.DingTalkUtil;
 
 /**
  * 基于log的alarm机制实现
@@ -15,10 +16,10 @@ public class LogAlarmHandler extends AbstractCanalLifeCycle implements CanalAlar
 
     private static final Logger logger = LoggerFactory.getLogger(LogAlarmHandler.class);
 
+    @Override
     public void sendAlarm(String destination, String msg) {
         logger.error("destination:{}[{}]", new Object[] { destination, msg });
-
-
+        DingTalkUtil.pushMessage(msg);
     }
 
 }

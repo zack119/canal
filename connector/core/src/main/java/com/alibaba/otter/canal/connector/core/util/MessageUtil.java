@@ -93,17 +93,6 @@ public class MessageUtil {
                                     column.getValue(),
                                     column.getSqlType(),
                                     column.getMysqlType()));
-                            // todo delete
-                            logger.info("table: {}, column name: {}, column value: {}. convert value: {} ",
-                                    msg.getTable(),
-                                    column.getName(),
-                                    column.getValue(),
-                                    JdbcTypeUtil.typeConvert(msg.getTable(),
-                                            column.getName(),
-                                            column.getValue(),
-                                            column.getSqlType(),
-                                            column.getMysqlType()));
-
                         }
                         // 获取update为true的字段
                         if (column.getUpdated()) {
@@ -126,17 +115,6 @@ public class MessageUtil {
                                         column.getValue(),
                                         column.getSqlType(),
                                         column.getMysqlType()));
-
-                                    // todo delete
-                                    logger.info("table: {}, column name: {}, column value: {}. convert value: {} ",
-                                            msg.getTable(),
-                                            column.getName(),
-                                            column.getValue(),
-                                            JdbcTypeUtil.typeConvert(msg.getTable(),
-                                                    column.getName(),
-                                                    column.getValue(),
-                                                    column.getSqlType(),
-                                                    column.getMysqlType()));
                                 }
                             }
                         }

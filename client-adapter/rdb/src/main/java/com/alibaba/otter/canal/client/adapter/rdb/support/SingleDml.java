@@ -17,6 +17,9 @@ public class SingleDml {
     private Map<String, Object> data;
     private Map<String, Object> old;
 
+    private String              sql;
+    private Boolean             isDdl;
+
     public String getDestination() {
         return destination;
     }
@@ -65,6 +68,22 @@ public class SingleDml {
         this.old = old;
     }
 
+    public String getSql() {
+        return sql;
+    }
+
+    public void setSql(String sql) {
+        this.sql = sql;
+    }
+
+    public Boolean getDdl() {
+        return isDdl;
+    }
+
+    public void setDdl(Boolean ddl) {
+        isDdl = ddl;
+    }
+
     public static List<SingleDml> dml2SingleDmls(Dml dml, boolean caseInsensitive) {
         List<SingleDml> singleDmls = new ArrayList<>();
         if (dml.getData() != null) {
@@ -87,6 +106,10 @@ public class SingleDml {
                     }
                     singleDml.setOld(oldData);
                 }
+
+                // add ddl
+                singleDml.setDdl(dml.getIsDdl());
+                singleDml.setSql(dml.getSql());
                 singleDmls.add(singleDml);
             }
         } else if ("TRUNCATE".equalsIgnoreCase(dml.getType())) {

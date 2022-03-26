@@ -214,14 +214,15 @@ public class RdbSyncService {
                 }
                 String type = dml.getType();
                 if (type != null && type.equalsIgnoreCase("INSERT")) {
-//                    replace(batchExecutor, config, dml);
-                    insert(batchExecutor, config, dml);
+                    replace(batchExecutor, config, dml);
                 } else if (type != null && type.equalsIgnoreCase("UPDATE")) {
-                    update(batchExecutor, config, dml);
+                    replace(batchExecutor, config, dml);
                 } else if (type != null && type.equalsIgnoreCase("DELETE")) {
                     delete(batchExecutor, config, dml);
                 } else if (type != null && type.equalsIgnoreCase("TRUNCATE")) {
                     truncate(batchExecutor, config);
+                } else if (type != null && type.equalsIgnoreCase("ALTER")) {
+
                 }
 //                if (logger.isDebugEnabled()) {
 //                    logger.debug("DML: {}", JSON.toJSONString(dml, SerializerFeature.WriteMapNullValue));
@@ -427,11 +428,8 @@ public class RdbSyncService {
             BatchExecutor.setValue(values, type, value);
         }
 
-        logger.info("replace sql: {}", insertSql);
-        for (Map<String, ?> value : values) {
-            value.forEach((k, v) -> {
-                logger.info("k -> {}, v -> {}", k, String.valueOf(v));
-            });
+        if (logger.isDebugEnabled()) {
+            logger.debug("Insert into target table, sql: {}", insertSql);
         }
 
         try {
@@ -442,16 +440,42 @@ public class RdbSyncService {
                 // ignore
                 // TODO 增加更多关系数据库的主键冲突的错误码
             } else {
+                logger.error("Sync error sql: {}, value: {}", insertSql, JSON.toJSONString(values));
                 throw e;
             }
-
-
-        }
-        if (logger.isTraceEnabled()) {
-            logger.trace("Insert into target table, sql: {}", insertSql);
         }
 
     }
+
+    /**
+     * 更新ddl语句
+     *
+     * @param batchExecutor
+     * @param config
+     * @param dml
+     * @throws SQLException
+     */
+    private void alterTable(BatchExecutor batchExecutor, MappingConfig config, SingleDml dml) throws SQLException {
+        if (StringUtils.isBlank(dml.getSql())) {
+            return;
+        }
+        final String ddlSql = dml.getSql();
+        logger.warn("!!!DDL sql: {}", ddlSql);
+
+        try {
+            batchExecutor.execute(ddlSql, null);
+
+        } catch (SQLException e) {
+            if (skipDupException
+                    && (e.getMessage().contains("Duplicate entry") || e.getMessage().startsWith("ORA-00001:"))) {
+                // ignore
+                logger.error(e.getMessage(), e);
+            } else {
+                throw e;
+            }
+        }
+    }
+
 
     /**
      * 删除操作
@@ -501,6 +525,7 @@ public class RdbSyncService {
      *
      * @param conn sql connection
      * @param config 映射配置
+     * @param needUpdateTargetColumnType 当执行ddl时，需要更新目标字段映射
      * @return 字段sqlType
      */
     private Map<String, Integer> getTargetColumnType(Connection conn, MappingConfig config) {
@@ -514,7 +539,7 @@ public class RdbSyncService {
                     columnType = new LinkedHashMap<>();
                     final Map<String, Integer> columnTypeTmp = columnType;
                     String sql = "SELECT * FROM " + SyncUtil.getDbTableName(dbMapping) + " WHERE 1=2";
-                    logger.info("select sql: {}, dbMapping: {}", sql, dbMapping);
+                    //logger.info("select sql: {}, dbMapping: {}", sql, dbMapping);
                     Util.sqlRS(conn, sql, rs -> {
                         try {
                             ResultSetMetaData rsd = rs.getMetaData();
@@ -523,7 +548,6 @@ public class RdbSyncService {
                                 columnTypeTmp.put(rsd.getColumnName(i).toLowerCase(), rsd.getColumnType(i));
                             }
                             columnsTypeCache.put(cacheKey, columnTypeTmp);
-                            logger.info("columnsTypeCache key {}, columnTypeTmp {}", cacheKey, columnTypeTmp);
                         } catch (SQLException e) {
                             logger.error(e.getMessage(), e);
                         }
